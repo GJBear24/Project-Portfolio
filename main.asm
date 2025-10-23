@@ -1,0 +1,232 @@
+;-------------------------------------------------------------------------------
+; MSP430 Assembler Code Template for use with TI Code Composer Studio
+;-------------------------------------------------------------------------------
+            .cdecls C,LIST,"msp430.h"       ; Include device header file
+;-------------------------------------------------------------------------------
+            .def    RESET                  ; Export program entry-point to
+                                            ; make it known to linker.
+;-------------------------------------------------------------------------------
+            .text                           ; Assemble into program memory.
+            .retain                         ; Override ELF conditional linking
+                                            ; and retain current section.
+            .retainrefs                     ; And retain any sections that have
+                                            ; references to current section.
+;-------------------------------------------------------------------------------
+RESET    	mov.w   #__STACK_END,SP         ; Initialize stackpointer
+StopWDT     mov.w   #WDTPW|WDTHOLD,&WDTCTL  ; Stop watchdog timer
+;-------------------------------------------------------------------------------
+; Main loop here
+;-------------------------------------------------------------------------------
+;Setup for buzzer
+			bis.b	#BIT2,P1DIR
+			bis.b	#BIT2,P1SEL
+;Frequency timer
+			mov.w	#TASSEL_2+ID_0+MC_1,TA0CTL
+			mov.w	#OUTMOD_2,TA0CCTL1
+
+;Delay timer
+			mov.w 	#TASSEL_2+MC_1,TA1CTL
+
+
+
+loop
+			bic.w 	#65535,TA1CCR0 ;Clear timer
+
+
+			;versee 1
+
+			call 	#f523 ;Set frequency
+			call 	#t500 ;Set delay
+
+			call 	#f587
+			call 	#t500
+
+			call 	#f659
+			call 	#t500
+
+			call 	#f698
+			call 	#t500
+
+			call 	#f784
+			call 	#t900
+
+			call 	#t100
+
+			call 	#f784
+			call 	#t900
+
+			;verse 2
+
+			call 	#t100
+
+			call 	#f880
+			call 	#t400
+
+			call 	#t100
+
+			call 	#f880
+			call 	#t400
+
+			call 	#t100
+
+			call 	#f880
+			call 	#t400
+
+			call 	#t100
+
+			;verse 3
+
+			call 	#f880
+			call 	#t500
+
+			call 	#f784
+			call 	#t1000
+			call 	#t900
+
+			call 	#t100
+
+			call 	#f698
+			call 	#t400
+
+			call 	#t100
+
+			call 	#f698
+			call 	#t400
+
+			call 	#t100
+
+			;verse 4
+
+			call 	#f698
+			call 	#t400
+
+			call 	#t100
+
+			call 	#f698
+			call 	#t500
+
+			call 	#f659
+			call 	#t900
+
+			call 	#t100
+
+			;verse 5
+
+			call 	#f659
+			call 	#t900
+
+			call 	#t100
+
+			call 	#f587
+			call 	#t400
+
+			call 	#t100
+
+			call 	#f587
+			call 	#t400
+
+			;verse 6
+
+			call 	#t100
+
+			call 	#f587
+			call 	#t400
+
+			call 	#f587
+			call 	#t500
+
+			call 	#f523
+			call 	#t1000
+			call 	#t1000
+
+			jmp loop
+
+			nop
+
+;Delay
+
+delay		bis.w 	#TACLR,TA1CTL ;Prep timer A1
+			bic.w 	#TAIFG,TA1CTL
+vent
+			bit.w	#TAIFG,TA1CTL ;Check timer flag
+			jz 		vent
+			bic.w 	#ID_3, TA1CTL ;Clear bit in timer ID
+			bic.w 	#TAIDEX_7, TA1EX0 ;Clear all bits in timer IDEX
+			ret
+
+
+			nop
+
+;Duration (ms)
+t100		bis.w 	#ID_1,TA1CTL ;Set bits in timer ID
+			bis.w 	#TAIDEX_0, TA1EX0 ;Set bits in timer IDEX
+			mov.w	#52428, TA1CCR0
+			mov.w	#0, TA0CCR0 ;100ms is only used during rests in melody
+			mov.w	#0, TA0CCR1
+			call 	#delay
+			ret
+
+t400		bis.w	#ID_0,TA1CTL
+			bis.w 	#TAIDEX_6, TA1EX0
+			mov.w 	#59918, TA1CCR0
+			call 	#delay
+			ret
+
+t500		bis.w 	#ID_0,TA1CTL
+			bis.w 	#TAIDEX_7, TA1EX0
+			mov.w 	#65535, TA1CCR0
+			call 	#delay
+			ret
+
+t900		bis.w 	#ID_2,TA1CTL
+			bis.w 	#TAIDEX_3, TA1EX0
+			mov.w 	#58982, TA1CCR0
+			call 	#delay
+			ret
+
+t1000		bis.w 	#ID_2,TA1CTL
+			bis.w 	#TAIDEX_3, TA1EX0
+			mov.w 	#65535, TA1CCR0
+			call 	#delay
+			ret
+
+;Frequency (Hz)
+f523
+			mov.w	#2005, TA0CCR0
+			mov.w	#1002, TA0CCR1
+			ret
+f587
+			mov.w	#1787, TA0CCR0
+			mov.w	#894, TA0CCR1
+			ret
+f659
+			mov.w	#1591, TA0CCR0
+			mov.w	#795, TA0CCR1
+			ret
+f698
+			mov.w	#1503, TA0CCR0
+			mov.w	#751, TA0CCR1
+			ret
+f784
+			mov.w	#1337, TA0CCR0
+			mov.w	#668, TA0CCR1
+			ret
+f880
+			mov.w	#1191, TA0CCR0
+			mov.w	#595, TA0CCR1
+			ret
+
+
+
+
+			nop
+;-------------------------------------------------------------------------------
+; Stack Pointer definition
+;-------------------------------------------------------------------------------
+            .global __STACK_END
+            .sect   .stack
+;-------------------------------------------------------------------------------
+; Interrupt Vectors
+;-------------------------------------------------------------------------------
+            .sect   ".reset"                ; MSP430 RESET Vector
+            .short  RESET
