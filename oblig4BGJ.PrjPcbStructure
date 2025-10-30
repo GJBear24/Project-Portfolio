@@ -1,0 +1,3 @@
+Record=TopLevelDocument|FileName=4bandequi.SchDoc|SheetNumber=1
+Record=SheetSymbol|SourceDocument=4bandequi.SchDoc|Designator=4-B EQ Ch 1|SchDesignator=4-B EQ Ch 1|FileName=channel 1.SchDoc|SheetNumber=3|SymbolType=Normal|RawFileName=channel 1.SchDoc|DesignItemId= |SourceLibraryName= |ObjectKind=Sheet Symbol|RevisionGUID= |ItemGUID= |VaultGUID= 
+Record=SheetSymbol|SourceDocument=4bandequi.SchDoc|Designator=Power Supply|SchDesignator=Power Supply|FileName=Power supply.SchDoc|SheetNumber=2|SymbolType=Normal|RawFileName=Power supply.SchDoc|DesignItemId= |SourceLibraryName= |ObjectKind=Sheet Symbol|RevisionGUID= |ItemGUID= |VaultGUID= 
