@@ -1,0 +1,251 @@
+PO2-BGJ
+;-------------------------------------------------------------------------------
+; MSP430 Assembler Code Template for use with TI Code Composer Studio
+;
+;
+;-------------------------------------------------------------------------------
+            .cdecls C,LIST,"msp430.h"       ; Include device header file
+            
+;-------------------------------------------------------------------------------
+            .def    RESET                   ; Export program entry-point to
+                                            ; make it known to linker.
+;-------------------------------------------------------------------------------
+            .text                           ; Assemble into program memory.
+            .retain                         ; Override ELF conditional linking
+                                            ; and retain current section.
+            .retainrefs                     ; And retain any sections that have
+                                            ; references to current section.
+
+;-------------------------------------------------------------------------------
+RESET       mov.w   #__STACK_END,SP         ; Initialize stackpointer
+StopWDT     mov.w   #WDTPW|WDTHOLD,&WDTCTL  ; Stop watchdog timer
+
+
+;-------------------------------------------------------------------------------
+; Main loop here
+;-------------------------------------------------------------------------------
+
+
+
+;setup for buttons
+
+	bic.b #BIT1, P1DIR ;button 1
+	bis.b #BIT1, P1REN
+	bis.b #BIT1, P1OUT
+	bis.b #BIT1, P1IES
+	bic.b #BIT1, P1IFG
+	bis.b #BIT1, P1IE
+	mov.b #0x0, R10    ;R10 used to toggle counting stop/reset
+
+	bic.b #BIT1, P2DIR ;button 2
+	bis.b #BIT1, P2REN
+	bis.b #BIT1, P2OUT
+	bis.b #BIT1, P2IES
+	bic.b #BIT1, P2IFG
+	bis.b #BIT1, P2IE
+
+;	bic.b #BIT2, P1DIR ;button 3
+;	bis.b #BIT2, P1REN
+;	bis.b #BIT2, P1IES
+;	bic.b #BIT2, P1IFG
+;	bis.b #BIT2, P1IE
+
+;	bic.b #BIT3, P1DIR ;button 4
+;	bis.b #BIT3, P1REN
+;	bis.b #BIT3, P1OUT
+;	bis.b #BIT3, P1IES
+;	bic.b #BIT3, P1IFG
+;	bis.b #BIT3, P1IE
+
+;	bic.b #BIT5, P1DIR ;button 5
+;	bis.b #BIT5, P1REN
+;	bis.b #BIT5, P1OUT
+;	bis.b #BIT5, P1IES
+;	bic.b #BIT5, P1IFG
+;	bis.b #BIT5, P1IE
+
+;7-seg setup
+
+	bis.b #0xFF, P3DIR
+	mov.b #0xFF, P3OUT
+	mov.b #0x0, R9		;R9 used to point in value array
+	mov.b #0x0, R8     	;R8 used to swap counting modes
+
+;7seg data initialization
+
+	mov.w 	#0x3500,R5   ;establish R5 as a pointer
+	mov.b	#0x01,0h(R5) ;0 (0000 0001)
+	mov.b	#0x9F,1h(R5) ;1 (1001 1111)
+	mov.b	#0x42,2h(R5) ;2 (0100 0010)
+	mov.b	#0x06,3h(R5) ;3 (0000 0110)
+	mov.b	#0x1C,4h(R5) ;4 (0001 1100)
+	mov.b	#0x24,5h(R5) ;5 (0010 0100)
+	mov.b	#0x20,6h(R5) ;6 (0010 0000)
+	mov.b 	#0x0F,7h(R5) ;7 (0000 1111)
+	mov.b	#0x00,8h(R5) ;8 (0000 0000)
+	mov.b	#0x0C,9h(R5) ;9 (0000 1100)
+
+;buzzer setup
+
+	bis.b #BIT2, P4OUT
+	bis.b #BIT2, P4SEL
+
+;pot.meter setup
+
+	bis.b #BIT0, P6OUT
+	bis.b #BIT0, P6SEL
+
+
+;TA0 setup
+
+	mov.w #TASSEL_2+ID_3+MC_1+TAIE, TA0CTL ;TAIE enables interrupt
+	mov.w #TAIDEX_7, TA0EX0 ;DIV 8
+	mov.w #56798, TA0CCR0   ;1.3 seconds
+
+;TA1 setup
+
+;	mov.w #TASSEL_2+ID_0+MC_1+TAIE, TA1CTL
+;	mov.w #874, TA1CCR0
+
+;adc setup
+
+;ADC12CTL0
+;		bic.w	#ADC12ENC+ADC12SC,ADC12CTL0
+;		bis.w	#ADC12ON+ADC12SHT0_2,ADC12CTL0
+
+;ADC12CTL1
+;		bis.w	#ADC12CSTARTADD_0+ADC12SHP+ADC12SHS_0+ADC12SSEL_3+ADC12CONSEQ_0,ADC12CTL1
+;		bic.w	#+ADC12ISSH,ADC12CTL1
+
+;ADC12CTL2
+;		bic.w	#ADC12PDIV+ADC12RES_2+ADC12DF,ADC12CTL2
+
+;ADC12MCTL0 (for ADC12MEM0)
+;		bis.w	#ADC12SREF_0+ADC12INCH_0,ADC12MCTL0
+;		bis.w	#ADC12ENC,ADC12CTL0
+
+;global interrupt
+
+	nop
+	bis.b #GIE, SR
+	nop
+
+;------------------------------------------------------------
+
+loop
+
+;	bis.w #ADC12SC, ADC12CTL0
+;adctest
+;	bit.w #ADC12IFG0, ADC12IFG
+;		jz adctest
+;	cmp.w #0h, ADC12MEM0
+;		jeq loop
+;	mov.w
+
+	jmp loop
+;------------------------------------------------------------
+
+;7-seg subroutines
+
+counting
+
+	cmp.b #0x0, R8			;check up/down mode
+		jeq increase
+		jne decrease
+
+increase
+	clr P3OUT
+	mov.b @R5, P3OUT		;display 0 on 7-seg disp
+	inc.w R5
+	cmp.w #0x350A, R5					;checks if disp is 9
+		jeq resetinc
+	ret
+resetinc
+	mov.w #0x3500, R5
+	ret
+
+
+decrease
+	clr P3OUT
+	mov.b @R5, P3OUT		;display 0 on 7-seg disp
+	dec.w R5
+	cmp.w #0x34FF, R5 					;checks if disp is 9
+		jeq resetdec
+	ret
+resetdec
+	mov.w #0x3509, R5
+	ret
+
+;--------------------------------------------------------
+
+;ISRs
+
+	;Interrupt handler for P1
+P1_ISR  ; Interrupt latency
+		add &P1IV,PC ; Add offset to Jump table
+		reti ; Vector 0: No interrupt
+		jmp P1_ISR_RETI ; Vector 2: Port 1 bit 0
+		jmp b11 ; Vector 4: Port 1 bit 1
+		jmp P1_ISR_RETI ; Vector 6: Port 1 bit 2
+		jmp P1_ISR_RETI ; Vector 8: Port 1 bit 3
+		jmp P1_ISR_RETI ; Vector 10: Port 1 bit 4
+		jmp P1_ISR_RETI ; Vector 12: Port 1 bit 5
+		jmp P1_ISR_RETI ; Vector 14: Port 1 bit 6
+		jmp P1_ISR_RETI ; Vector 16: Port 1 bit 7
+
+P1_ISR_RETI reti
+
+b11
+	xor.b #BIT0, R10  ;toggle R10 (0=stop 1=reset)
+		jne stopb11   ;this toggles the reset
+	mov.w #0x3500, R5 ;this is the reset
+stopb11
+	reti
+
+
+
+
+P2_ISR:
+
+	xor.b #0x1, R8		;swap R8 mode
+	bic.b #BIT1, P2IFG  ;clear P2 interrupt flag
+	reti
+
+TA0_ISR:
+	bic.w	#TAIFG,TA0CTL ;clear timer interrupt flag
+	bit.b #BIT0, R10	  ;test is stop is enabled
+		jne stop
+	call #counting
+stop
+	reti
+
+;TA1_ISR:
+;	bic.w	#TAIFG,TA1CTL
+;	reti
+
+	nop
+
+;-------------------------------------------------------------------------------
+; Stack Pointer definition
+;-------------------------------------------------------------------------------
+            .global __STACK_END
+            .sect   .stack
+            
+;-------------------------------------------------------------------------------
+; Interrupt Vectors
+;-------------------------------------------------------------------------------
+            .sect   ".reset"                ; MSP430 RESET Vector
+            .short  RESET
+            
+			.sect	".int47"
+			.short  P1_ISR
+			.sect	".int42"
+			.short	P2_ISR
+			.sect	".int52"
+			.short  TA0_ISR
+			.sect	".int48"
+			.short  TA1_ISR
+			.sect	".int53"
+			.short  TA0_ISR
+			.sect	".int49"
+			.short  TA1_ISR

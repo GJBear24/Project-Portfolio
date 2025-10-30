@@ -1,0 +1,140 @@
+;-------------------------------------------------------------------------------
+; MSP430 Assembler Code Template for use with TI Code Composer Studio
+;
+;
+;-------------------------------------------------------------------------------
+            .cdecls C,LIST,"msp430.h"       ; Include device header file
+            
+;-------------------------------------------------------------------------------
+            .def    RESET                   ; Export program entry-point to
+                                            ; make it known to linker.
+;-------------------------------------------------------------------------------
+            .text                           ; Assemble into program memory.
+            .retain                         ; Override ELF conditional linking
+                                            ; and retain current section.
+            .retainrefs                     ; And retain any sections that have
+                                            ; references to current section.
+
+;-------------------------------------------------------------------------------
+RESET       mov.w   #__STACK_END,SP         ; Initialize stackpointer
+StopWDT     mov.w   #WDTPW|WDTHOLD,&WDTCTL  ; Stop watchdog timer
+
+
+;-------------------------------------------------------------------------------
+; Main loop here
+;-------------------------------------------------------------------------------
+
+
+;setup for buttons
+
+	bic.b #BIT1, P3DIR ;blue
+	bis.b #BIT1, P3OUT
+	bis.b #BIT1, P3REN
+
+	bic.b #BIT2, P2DIR ;green
+	bis.b #BIT2, P2OUT
+	bis.b #BIT2, P2REN
+
+	bic.b #BIT4, P7DIR ;red
+	bis.b #BIT4, P7OUT
+	bis.b #BIT4, P7REN
+
+;setup for lights
+
+
+	bis.b #BIT2,P1DIR ;blue
+	bis.b #BIT2,P1SEL
+	mov.w #OUTMOD_2,TA0CCTL1
+
+	bis.b #BIT3,P1DIR ;green
+	bis.b #BIT3,P1SEL
+	mov.w #OUTMOD_2,TA0CCTL2
+
+	bis.b #BIT4,P1DIR ;red
+	bis.b #BIT4,P1SEL
+	mov.w #OUTMOD_2,TA0CCTL3
+
+;setup for potentiometer
+
+	bic.b #BIT0, P6DIR ;A-0 input
+	bis.b #BIT0, P6SEL
+
+
+
+
+;TimerA0
+	mov.w #TASSEL__SMCLK+ID_0+MC_1,TA0CTL
+
+	mov.w #0xFFF, TA0CCR0
+	mov.w #0x0, TA0CCR1
+	mov.w #0x0, TA0CCR2
+	mov.w #0x0, TA0CCR3
+
+
+
+;ADC12CTL0
+		bic.w	#ADC12ENC+ADC12SC,ADC12CTL0
+		bis.w	#ADC12ON+ADC12SHT0_2,ADC12CTL0
+
+;ADC12CTL1
+		bis.w	#ADC12CSTARTADD_0+ADC12SHP+ADC12SHS_0+ADC12SSEL_3+ADC12CONSEQ_0,ADC12CTL1
+		bic.w	#+ADC12ISSH,ADC12CTL1
+
+;ADC12CTL2
+		bic.w	#ADC12PDIV+ADC12RES_2+ADC12DF,ADC12CTL2 
+
+;ADC12MCTL0 (for ADC12MEM0)
+		bis.w	#ADC12SREF_0+ADC12INCH_0,ADC12MCTL0
+		bis.w	#ADC12ENC,ADC12CTL0
+
+;---------------------------------------------------------------
+maintest
+b	bit.b #BIT1, P3IN ;test blue button
+	jnz g
+	call #blue
+g	bit.b #BIT2, P2IN ;test green button
+	jnz r
+	call #green
+r	bit.b #BIT4, P7IN ;test red button
+	jnz maintest
+	call #red
+	jmp maintest
+
+blue
+	bis.w #ADC12SC,ADC12CTL0 ;start adc
+more1
+	bit.w #ADC12IFG0, ADC12IFG ;check adc flag
+	jz more1
+	mov.w ADC12MEM0,TA0CCR1 ;sets adc value into blue output
+	ret
+
+green
+	bis.w #ADC12SC,ADC12CTL0 ;start adc
+more2
+	bit.w #ADC12IFG0, ADC12IFG ;check adc flag
+	jz more2
+	mov.w ADC12MEM0,TA0CCR2 ;sets adc value into green output
+	ret
+
+red
+	bis.w #ADC12SC,ADC12CTL0 ;start adc
+more3
+	bit.w #ADC12IFG0, ADC12IFG ;check adc flag
+	jz more3
+	mov.w ADC12MEM0,TA0CCR3 ;sets adc value into red output
+	ret
+
+	nop
+
+;-------------------------------------------------------------------------------
+; Stack Pointer definition
+;-------------------------------------------------------------------------------
+            .global __STACK_END
+            .sect   .stack
+            
+;-------------------------------------------------------------------------------
+; Interrupt Vectors
+;-------------------------------------------------------------------------------
+            .sect   ".reset"                ; MSP430 RESET Vector
+            .short  RESET
+            
