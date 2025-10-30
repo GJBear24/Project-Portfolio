@@ -22,3 +22,19 @@ MK4 - Seven-segment controller with interrupt
   Designed an interrupt-driven 7-segment display counter in MSP430 assembly with hardware-based
 timing and button input control. Implemented lookup tables, timer interrupts, and state toggling 
 logic to handle run/stop and up/down modes.
+
+Altium Projects
+
+oblig4BGJ - 4-Band Analog Audio Equalizer — PCB Project
+  Designed a 4-band analog audio equalizer using active band-pass filters based on NE5532 op-amps.
+Developed all schematics, power supply stage, and PCB layout in Altium Designer, including custom 
+component libraries. Implemented RC filter networks for four frequency bands, dual-rail power supply,
+and low-noise analog grounding strategy. Verified design through ERC/DRC checks and BOM generation.
+
+555-timer - Clock
+  Designed and simulated a digital clock circuit using a 555 timer and SN74LS90 counters. Implemented
+cascading logic for minute and second counting, integrated BCD decoding, and created full schematic
+and BOM documentation in Altium Designer.
+
+
+
